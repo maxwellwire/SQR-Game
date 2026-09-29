@@ -54,11 +54,11 @@ export function validateRun(input: {
   if (height > maxPossible * 0.95) {
     return {
       status: "FLAGGED",
-      reason: `Height near theoretical maximum (${height}m / ${Math.floor(maxPossible)}m)",
+      reason: `Height near theoretical maximum (${height}m / ${Math.floor(maxPossible)}m)`,
     };
   }
 
-  // Acorns vs height heuristic (roughly 1 acorn per 30-50m is normal)
+  // Acorns vs height heuristic
   if (acorns > 0 && height > 0) {
     const acornsPerMeter = acorns / height;
     if (acornsPerMeter > 0.2) {
