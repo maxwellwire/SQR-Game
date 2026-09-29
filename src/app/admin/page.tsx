@@ -9,14 +9,16 @@ type Stats = {
   flaggedRuns: number;
   communityRecord: number;
   communityRecordHolder: string | null;
-  recentRuns: Array<{
-    id: string;
-    height: number;
-    status: string;
-    username: string;
-    createdAt: string;
-  }>;
   topPlayers: Array<{ username: string; bestHeight: number }>;
+};
+
+type RunRow = {
+  id: string;
+  height: number;
+  status: string;
+  username: string;
+  createdAt: string;
+  validationReason?: string | null;
 };
 
 export default function AdminPage() {
@@ -25,7 +27,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [runs, setRuns] = useState<Array<Record<string, unknown>>>([]);
+  const [runs, setRuns] = useState<RunRow[]>([]);
   const [filter, setFilter] = useState("FLAGGED");
 
   const loadStats = async (adminSecret: string) => {
@@ -41,7 +43,21 @@ export default function AdminPage() {
         setAuthed(false);
         return;
       }
-      setStats(data);
+      const record = data.communityRecord;
+      setStats({
+        totalPlayers: data.totalPlayers,
+        totalRuns: data.totalRuns,
+        validatedRuns: data.validatedRuns,
+        flaggedRuns: data.flaggedRuns,
+        communityRecord: record?.bestHeight ?? 0,
+        communityRecordHolder: record?.username ?? null,
+        topPlayers: (data.topPlayers || []).map(
+          (p: { username: string; bestHeight: number }) => ({
+            username: p.username,
+            bestHeight: p.bestHeight,
+          })
+        ),
+      });
       setAuthed(true);
     } catch {
       setError("Network error");
@@ -56,7 +72,26 @@ export default function AdminPage() {
         headers: { "x-admin-secret": adminSecret },
       });
       const data = await res.json();
-      if (res.ok) setRuns(data.runs || []);
+      if (res.ok) {
+        const mapped: RunRow[] = (data.runs || []).map(
+          (r: {
+            id: string;
+            height: number;
+            status: string;
+            createdAt: string;
+            validationReason?: string | null;
+            user?: { username?: string };
+          }) => ({
+            id: r.id,
+            height: r.height,
+            status: r.status,
+            username: r.user?.username || "-",
+            createdAt: r.createdAt,
+            validationReason: r.validationReason,
+          })
+        );
+        setRuns(mapped);
+      }
     } catch {
       /* ignore */
     }
@@ -95,7 +130,10 @@ export default function AdminPage() {
   if (!authed) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
-        <form onSubmit={handleAuth} className="max-w-sm w-full bg-white border border-orange-100 rounded-2xl p-8 shadow-sm">
+        <form
+          onSubmit={handleAuth}
+          className="max-w-sm w-full bg-white border border-orange-100 rounded-2xl p-8 shadow-sm"
+        >
           <h1 className="text-xl font-bold text-sqr-dark mb-4 text-center">Admin Access</h1>
           <input
             type="password"
@@ -130,7 +168,10 @@ export default function AdminPage() {
             { label: "Validated", value: stats.validatedRuns },
             { label: "Flagged", value: stats.flaggedRuns },
           ].map((s) => (
-            <div key={s.label} className="bg-white border border-orange-100 rounded-xl p-4 text-center">
+            <div
+              key={s.label}
+              className="bg-white border border-orange-100 rounded-xl p-4 text-center"
+            >
               <div className="text-xs text-sqr-brown/50 uppercase">{s.label}</div>
               <div className="text-xl font-bold text-sqr-dark">{s.value}</div>
             </div>
@@ -189,10 +230,10 @@ export default function AdminPage() {
                 </tr>
               )}
               {runs.map((r) => (
-                <tr key={String(r.id)} className="border-t border-orange-50">
-                  <td className="px-4 py-3">{String(r.username || "-")}</td>
+                <tr key={r.id} className="border-t border-orange-50">
+                  <td className="px-4 py-3">{r.username}</td>
                   <td className="px-4 py-3 font-semibold text-sqr-orange">
-                    {Number(r.height).toLocaleString()}m
+                    {r.height.toLocaleString()}m
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -206,23 +247,23 @@ export default function AdminPage() {
                           : "bg-gray-100 text-gray-700"
                       }`}
                     >
-                      {String(r.status)}
+                      {r.status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-sqr-brown/60">
-                    {r.createdAt ? new Date(String(r.createdAt)).toLocaleString() : "-"}
+                    {r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}
                   </td>
                   <td className="px-4 py-3 space-x-2">
                     {(r.status === "FLAGGED" || r.status === "PENDING") && (
                       <>
                         <button
-                          onClick={() => moderateRun(String(r.id), "VALIDATED")}
+                          onClick={() => moderateRun(r.id, "VALIDATED")}
                           className="text-xs text-green-700 hover:underline"
                         >
                           Approve
                         </button>
                         <button
-                          onClick={() => moderateRun(String(r.id), "REJECTED")}
+                          onClick={() => moderateRun(r.id, "REJECTED")}
                           className="text-xs text-red-600 hover:underline"
                         >
                           Reject
