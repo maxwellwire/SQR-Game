@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&display=swap');
+
+:root {
+  --sqr-orange: #E85D04;
+  --sqr-brown: #7B3F00;
+  --sqr-cream: #FFF8E7;
+  --sqr-green: #2D6A4F;
+  --sqr-gold: #FFB703;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: #FFF8E7;
+  color: #1A1A1A;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Pixel font utility */
+.font-pixel {
+  font-family: 'Press Start 2P', cursive;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f0e6d3;
+}
+::-webkit-scrollbar-thumb {
+  background: #E85D04;
+  border-radius: 4px;
+}
+
+/* Touch controls */
+.touch-btn {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.touch-btn:active {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
+/* Game canvas */
+#game-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
